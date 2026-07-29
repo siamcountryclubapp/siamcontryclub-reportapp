@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="img/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+
+    <title>Siam Country Club - Report Generator</title>
+    
+    <!-- นำเข้าไลบรารี html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- นำเข้าไฟล์ CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="badge">REPORT</div>
+        <div class="title">Siam Country Club Old Course</div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <!-- ฝั่งซ้าย: Editor -->
+        <div class="editor-panel">
+            <h2>เครื่องมือสร้างรายงาน</h2>
+
+            <div class="form-section">
+                <label>รูปแบบงาน</label>
+                <div class="tabs">
+                    <button class="tab-btn active" id="tab-general">ทั่วไป</button>
+                    <button class="tab-btn" id="tab-ba">Before / After</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <label>รายละเอียดงาน</label>
+                <div class="input-row">
+                    <input type="text" id="input-dept" placeholder="แผนก..." value="">
+                    <input type="date" id="input-date">
+                </div>
+            </div>
+
+            <!-- กล่องอัปโหลด: โหมดทั่วไป -->
+            <div class="form-section" id="upload-section-general">
+                <label>เพิ่มรูปภาพ</label>
+                <div class="upload-area">
+                    <div class="upload-icon"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#999"><path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg></div>
+                    <div>อัปโหลดรูปภาพ</div>
+                    <input type="file" accept="image/*" multiple id="input-images-general">
+                </div>
+                <!-- กล่องแสดงรายชื่อไฟล์ -->
+                <div id="file-list-general" class="file-list"></div>
+            </div>
+
+            <!-- กล่องอัปโหลด: โหมด Before / After -->
+            <div id="upload-section-ba" class="hidden">
+                <div class="form-section">
+                    <label>เพิ่มรูปภาพ (Before)</label>
+                    <div class="upload-area" style="padding: 20px;">
+                        <div class="upload-icon" style="font-size: 20px;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#999"><path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg></div>
+                        <div style="font-size: 13px;">อัปโหลดรูปภาพ</div>
+                        <input type="file" accept="image/*" multiple id="input-images-before">
+                    </div>
+                    <!-- กล่องแสดงรายชื่อไฟล์ -->
+                    <div id="file-list-before" class="file-list"></div>
+                </div>
+                <div class="form-section" style="margin-top: 15px;">
+                    <label>เพิ่มรูปภาพ (After)</label>
+                    <div class="upload-area" style="padding: 20px;">
+                        <div class="upload-icon" style="font-size: 20px;"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#999"><path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg></div>
+                        <div style="font-size: 13px;">อัปโหลดรูปภาพ</div>
+                        <input type="file" accept="image/*" multiple id="input-images-after">
+                    </div>
+                    <!-- กล่องแสดงรายชื่อไฟล์ -->
+                    <div id="file-list-after" class="file-list"></div>
+                </div>
+            </div>
+
+            <div class="form-section" style="margin-top: 10px;">
+                <textarea id="input-title" type="text" placeholder="รายละเอียด..." maxlength="250"></textarea>
+                <span style="font-size: 11px; color: #888;">💡 ใช้ฟีเจอร์การซูมหรือเลื่อนรูปภาพเพื่อเลือกส่วนที่ต้องการได้เต็มประสิทธิภาพบนตอมพิวเตอร์ <b>/ จำกัดการพิมพ์ 250 ตัวอักษร</b></span>
+            </div>
+
+            <div class="save-btn-container">
+                <button class="save-btn" id="btn-export">SAVE JPG</button>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: Preview -->
+        <div class="preview-panel">
+            <div class="scale-container">
+                <div id="report-wrapper">
+                    <div id="report-canvas">
+                        
+                        <div class="report-header">
+                            <img src="img/logo-scc.png" alt="SCC_logo" style="width: 128px; height: 64px;">
+                            <img src="img/OC03.png" alt="OC_logo" style="width: 80px; height: 80px;">
+                        </div>
+
+                        <div class="report-content" id="report-content" style="gap: none;">
+                            <!-- พื้นที่สำหรับแสดงรูปภาพ -->
+                        </div>
+
+                        <div class="report-footer">
+                            <div class="title-box" id="prev-title">เพิ่มรายละเอียดงาน . . .</div>
+                            <div class="footer-meta">
+                                <span id="prev-dept">แผนก</span> &bull; <span id="prev-date">01.01.2569</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal สำหรับให้มือถือกดค้างเพื่อเซฟ -->
+    <div id="mobile-modal" class="modal-overlay hidden">
+        <div class="modal-text">แตะค้างที่รูปภาพเพื่อบันทึกลงเครื่อง 👇</div>
+        <img id="mobile-preview-img" class="modal-img" src="">
+        <button id="close-modal" class="modal-btn">ปิดหน้าต่าง</button>
+    </div>
+
+    <!-- นำเข้าไฟล์ JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
