@@ -1,576 +1,488 @@
-let currentMode = 'general';
-
-const templateConfig = {
-    'oc': { main: '#035c36', bg: '#d1dfd7', logo: 'img/OC03.png' },
-    'ws': { main: '#17325c', bg: '#d1d7e0', logo: 'img/WS03.png' }, 
-    'pl': { main: '#562821', bg: '#e0d6d1', logo: 'img/PL03.png' }, 
-    'rh': { main: '#3b1c4a', bg: '#dcd1e0', logo: 'img/RH03.png' }  
-};
-
-// ------------------------------------------------
-// สถานะเก็บรูปภาพแบบสะสม (Array)
-// ------------------------------------------------
-let stateGeneral = [];
-let stateBefore = [];
-let stateAfter = [];
-let currentTemplate = 'oc'; // เก็บค่า Template ปัจจุบัน
-
-// ------------------------------------------------
-// ฟังก์ชันอัปเดตรายชื่อไฟล์ และฟีเจอร์จัดเรียงรูปภาพ (เลื่อนขึ้น/ลง)
-// ------------------------------------------------
-function updateFileListUI(containerId, stateArray, renderCallback) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = '';
-    
-    stateArray.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'file-name';
-        nameSpan.textContent = `${index + 1}. ${item.name}`;
-        
-        const actionDiv = document.createElement('div');
-        actionDiv.style.display = 'flex';
-        actionDiv.style.gap = '8px';
-        actionDiv.style.alignItems = 'center';
-
-        // ปุ่มเลื่อนขึ้น (ถ้าไม่ใช่รูปแรกสุด)
-        if (index > 0) {
-            const upBtn = document.createElement('span');
-            upBtn.className = 'move-file-btn';
-            upBtn.innerHTML = '▲'; 
-            upBtn.onclick = () => {
-                [stateArray[index - 1], stateArray[index]] = [stateArray[index], stateArray[index - 1]];
-                renderCallback();
-            };
-            actionDiv.appendChild(upBtn);
-        }
-
-        // ปุ่มเลื่อนลง (ถ้าไม่ใช่รูปสุดท้าย)
-        if (index < stateArray.length - 1) {
-            const downBtn = document.createElement('span');
-            downBtn.className = 'move-file-btn';
-            downBtn.innerHTML = '▼'; 
-            downBtn.onclick = () => {
-                [stateArray[index + 1], stateArray[index]] = [stateArray[index], stateArray[index + 1]];
-                renderCallback();
-            };
-            actionDiv.appendChild(downBtn);
-        }
-        
-        const delBtn = document.createElement('span');
-        delBtn.className = 'delete-file-btn';
-        delBtn.textContent = 'ลบ';
-        delBtn.onclick = () => {
-            stateArray.splice(index, 1);
-            renderCallback();
-        };
-        
-        actionDiv.appendChild(delBtn);
-        div.appendChild(nameSpan);
-        div.appendChild(actionDiv);
-        container.appendChild(div);
-    });
+:root {
+    --primary-green: #035c36;
+    --light-green: #0b7044;
+    --bg-gray: #e6e6e6;
+    --text-dark: #333;
 }
 
-// ------------------------------------------------
-// ระบบอัปโหลดและเรนเดอร์: โหมดทั่วไป
-// ------------------------------------------------
-function renderGeneral() {
-    const reportContent = document.getElementById('report-content');
-    reportContent.innerHTML = '';
-    reportContent.style.padding = '16px 32px';
-    reportContent.style.display = 'grid';
-    reportContent.style.flexDirection = 'unset';
-    
-    // ดึงสีพื้นหลังจาก Template ปัจจุบัน
-    reportContent.style.backgroundColor = templateConfig[currentTemplate].bg;
+body {
+    font-family: 'Noto Sans Thai', 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-gray);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
+}
 
-    const count = stateGeneral.length;
-    if (count === 0) {
-        updateFileListUI('file-list-general', stateGeneral, renderGeneral);
-        return;
+/* --- Navbar --- */
+.navbar {
+    background-color: white;
+    color: black;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 20;
+}
+.navbar .badge {
+    background: white;
+    color: black;
+    box-shadow: 0 2px 5px #efbf04;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 4px;
+    margin-right: 15px;
+    font-size: 14px;
+}
+.navbar .title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* --- Main Layout --- */
+.main-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+/* --- Editor Panel (Left) --- */
+.editor-panel {
+    width: 350px;
+    background: #ffffff;
+    padding: 25px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 10;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    flex-shrink: 0;
+}
+.editor-panel h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-dark);
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.form-section label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 10px;
+}
+.tab-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    background: white;
+    color: #777;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: 'Noto Sans Thai', 'Roboto', sans-serif;
+}
+.tab-btn.active {
+    background: black;
+    color: white;
+    border-color: var(--primary-black);
+    font-weight: bold;
+    font-family: 'Noto Sans Thai', 'Roboto', sans-serif;
+}
+
+/* Inputs */
+.input-row {
+    display: flex;
+    gap: 10px;
+}
+.input-row input {
+    flex: 1;
+    width: 100%;
+}
+
+input[type="text"], input[type="date"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: 'Noto Sans Thai', 'Roboto', sans-serif;
+    resize: none;
+    height: 90px;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    background: #fafafa;
+    color: #999;
+    transition: all 0.2s;
+    position: relative;
+}
+.upload-area:hover {
+    border-color: var(--primary-green);
+    background: #f0f7f3;
+    color: var(--primary-green);
+}
+.upload-area input[type="file"] {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.upload-icon {
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+/* ----------------------------------
+   CSS รายชื่อไฟล์และปุ่มลบ 
+   ---------------------------------- */
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 5px;
+}
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f5f5f5;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: #333;
+    border: 1px solid #ddd;
+}
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80%;
+}
+.delete-file-btn {
+    color: #ff4d4f;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+.delete-file-btn:hover {
+    color: #d9363e;
+}
+
+/* ปุ่มลบที่โชว์บนรูป Canvas */
+.delete-slot-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    border: none;
+    border-radius: 30%;
+    width: 64px;
+    height: 64px;
+    font-size: 48px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.delete-slot-btn:hover {
+    background: rgba(255, 0, 0, 1);
+}
+
+/* ----------------------------------
+   เพิ่มใหม่: กล่อง Selection ตอนลากครอป
+   ---------------------------------- */
+.crop-selection {
+    position: absolute;
+    border: 2px dashed #00ff00;
+    background: rgba(0, 255, 0, 0.2);
+    pointer-events: none; /* ห้ามให้เมาส์ไปโดนกล่องนี้ตอนลาก */
+    z-index: 5;
+    display: none;
+}
+
+/* Save Button */
+.save-btn-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+.save-btn {
+    background-color: black;
+    color: white;
+    padding: 8px 20px;
+    border: 2px solid black;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.save-btn:hover { background-color: white; color: black; }
+.save-btn:disabled { background-color: #999; cursor: not-allowed; }
+
+/* Utility Class */
+.hidden { display: none !important; }
+
+/* --- Preview Panel (Right) --- */
+.preview-panel {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: auto;
+    padding: 40px;
+    box-sizing: border-box;
+}
+.scale-container {
+    transform: scale(0.5);
+    transform-origin: top center;
+}
+
+/* --- Canvas Report (w1076 x h1521) --- */
+#report-wrapper {
+    display: flex;
+    justify-content: center;
+    transform-origin: top center;
+}
+#report-canvas {
+    width: 1076px;
+    height: 1521px;
+    background-color: var(--primary-green);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+    box-sizing: border-box;
+    text-rendering: geometricPrecision;
+    font-variant-ligatures: none; 
+}
+
+/* Header Canvas */
+.report-header {
+    height: 128px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    box-sizing: border-box;
+    color: white;
+    flex-shrink: 0;
+}
+.logo-text {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 32px;
+    line-height: 1.1;
+    letter-spacing: 1px;
+}
+
+/* Content Canvas (Dynamic Grid) */
+.report-content {
+    background-color: #d1dfd7; 
+    flex-grow: 1;
+    display: grid;
+    gap: 10px;
+    padding: 16px 32px;
+    overflow: hidden; 
+}
+
+/* ----------------------------------
+   โครงสร้างรูปภาพรองรับซูม / ครอป
+   ---------------------------------- */
+.img-slot {
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+.img-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transform-origin: center;
+}
+
+/* โซน Before / After CSS */
+.section-before {
+    background-color: #fce4e4; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 32px;
+}
+.section-after {
+    background-color: #ccffcc; 
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 32px;
+}
+.badge-ba {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: bold;
+    width: fit-content;
+    margin-bottom: 10px;
+}
+.badge-before {
+    background-color: #ff0000; 
+    color: #ffffff;            
+}
+.badge-after {
+    background-color: #00ff00; 
+    color: #0369A1;            
+}
+
+/* Footer Canvas */
+.report-footer {
+    min-height: 200px;
+    height: 250px;
+    padding: 16px 32px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-shrink: 0; 
+    gap: 15px; 
+}
+.title-box {
+    background: white;
+    padding: 10px 16px;
+    border-radius: 8px; 
+    font-size: 32px; 
+    font-weight: bold;
+    color: #111;
+    min-height: 25px;
+    line-height: 1.4; 
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    width: 100%; 
+    max-width: 100%; 
+    box-sizing: border-box;
+}
+.footer-meta {
+    align-self: flex-end; 
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+/* --- Responsive สำหรับมือถือ --- */
+@media (max-width: 768px) {
+    body { overflow: auto; }
+    .scale-container {
+        width: 322.8px;
+        height: 456.7px;
     }
-    
-    // ตั้งค่า Grid
-    if (count === 1) { reportContent.style.gridTemplateColumns = '1fr'; reportContent.style.gridTemplateRows = '1fr'; } 
-    else if (count === 2) { reportContent.style.gridTemplateColumns = '1fr 1fr'; reportContent.style.gridTemplateRows = '1fr'; } 
-    else if (count === 3) { reportContent.style.gridTemplateColumns = '1fr 1fr'; reportContent.style.gridTemplateRows = '1fr 1fr'; } 
-    else if (count === 4) { reportContent.style.gridTemplateColumns = '1fr 1fr'; reportContent.style.gridTemplateRows = '1fr 1fr'; } 
-    else if (count === 5) { reportContent.style.gridTemplateColumns = 'repeat(6, 1fr)'; reportContent.style.gridTemplateRows = '1fr 1fr'; } 
-    else if (count === 7) { reportContent.style.gridTemplateColumns = 'repeat(6, 1fr)'; reportContent.style.gridTemplateRows = 'repeat(3, 1fr)'; } 
-    else {
-        const cols = Math.ceil(Math.sqrt(count));
-        const rows = Math.ceil(count / cols);
-        reportContent.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        reportContent.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    .main-container {
+        flex-direction: column;
+        overflow: visible;
     }
-    
-    // วาดรูปตาม State
-    stateGeneral.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'img-slot';
-        
-        if (count === 3 && index === 0) div.style.gridColumn = '1 / span 2';
-        else if (count === 5) div.style.gridColumn = index < 2 ? 'span 3' : 'span 2';
-        else if (count === 7) div.style.gridColumn = index < 4 ? 'span 3' : 'span 2';
-
-        const bgDiv = document.createElement('div');
-        bgDiv.className = 'img-bg';
-        bgDiv.style.backgroundImage = `url('${item.url}')`;
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'delete-slot-btn';
-        delBtn.innerHTML = '×';
-        delBtn.onclick = () => {
-            stateGeneral.splice(index, 1);
-            renderGeneral();
-        };
-
-        div.appendChild(bgDiv);
-        div.appendChild(delBtn);
-        makeDraggable(div, bgDiv, item);
-
-        reportContent.appendChild(div);
-    });
-
-    updateFileListUI('file-list-general', stateGeneral, renderGeneral);
-}
-
-// ------------------------------------------------
-// ระบบอัปโหลดและเรนเดอร์: โหมด Before/After
-// ------------------------------------------------
-function renderBA() {
-    const gridBefore = document.getElementById('grid-before');
-    const gridAfter = document.getElementById('grid-after');
-    if (!gridBefore || !gridAfter) return;
-
-    const renderGrid = (grid, stateArray, listId) => {
-        grid.innerHTML = '';
-        grid.style.gridTemplateColumns = `repeat(${Math.max(1, stateArray.length)}, 1fr)`;
-        
-        stateArray.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'img-slot';
-            
-            const bgDiv = document.createElement('div');
-            bgDiv.className = 'img-bg';
-            bgDiv.style.backgroundImage = `url('${item.url}')`;
-            
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-slot-btn';
-            delBtn.innerHTML = '×';
-            delBtn.onclick = () => {
-                stateArray.splice(index, 1);
-                renderBA();
-            };
-            
-            div.appendChild(bgDiv);
-            div.appendChild(delBtn);
-            makeDraggable(div, bgDiv, item);
-            grid.appendChild(div);
-        });
-
-        updateFileListUI(listId, stateArray, renderBA);
-    };
-
-    renderGrid(gridBefore, stateBefore, 'file-list-before');
-    renderGrid(gridAfter, stateAfter, 'file-list-after');
-}
-
-// ------------------------------------------------
-// ฟังก์ชันสำหรับทำให้รูปลาก/เลื่อน, ซูม และลากคลุมครอปได้
-// ------------------------------------------------
-function makeDraggable(container, bgElement, stateObj) {
-    let isDragging = false;
-    let isCropping = false;
-    let startX, startY;
-    
-    // ตัวแปรสำหรับกล่อง Crop
-    let cropBox = null;
-    let rectStartX, rectStartY;
-
-    // กำหนดค่าเริ่มต้นของพิกัดและซูมถ้ายังไม่มี
-    if (stateObj.panX === undefined) stateObj.panX = 0;
-    if (stateObj.panY === undefined) stateObj.panY = 0;
-    if (stateObj.zoom === undefined) stateObj.zoom = 1;
-
-    // ฟังก์ชันสำหรับอัปเดตและจำกัดขอบเขตการเลื่อน
-    const updateTransform = () => {
-        const rect = container.getBoundingClientRect();
-        
-        // คำนวณระยะสูงสุดที่สามารถเลื่อนได้ (เพื่อไม่ให้เกิดช่องว่าง/พื้นหลังโผล่)
-        const maxPanX = Math.max(0, (rect.width * (stateObj.zoom - 1)) / (2 * stateObj.zoom));
-        const maxPanY = Math.max(0, (rect.height * (stateObj.zoom - 1)) / (2 * stateObj.zoom));
-
-        // จำกัดพิกัด X และ Y ให้อยู่ในขอบเขตภาพเท่านั้น (Clamping)
-        stateObj.panX = Math.max(-maxPanX, Math.min(maxPanX, stateObj.panX));
-        stateObj.panY = Math.max(-maxPanY, Math.min(maxPanY, stateObj.panY));
-
-        bgElement.style.transform = `scale(${stateObj.zoom}) translate(${stateObj.panX}px, ${stateObj.panY}px)`;
-    };
-
-    // โหลดตำแหน่งและซูมจาก State เริ่มต้น
-    bgElement.style.backgroundPosition = 'center';
-    updateTransform();
-    bgElement.style.cursor = 'grab';
-
-    const startDrag = (e) => {
-        // หากผู้ใช้กดปุ่ม Shift ค้างไว้ จะเข้าสู่โหมด "ลากคลุมครอป"
-        if (e.shiftKey && e.type.includes('mouse')) {
-            isCropping = true;
-            isDragging = false;
-            
-            const rect = container.getBoundingClientRect();
-            rectStartX = e.clientX - rect.left;
-            rectStartY = e.clientY - rect.top;
-
-            // สร้างกล่องสี่เหลี่ยม
-            if (!cropBox) {
-                cropBox = document.createElement('div');
-                cropBox.className = 'crop-selection';
-                container.appendChild(cropBox);
-            }
-            cropBox.style.left = `${rectStartX}px`;
-            cropBox.style.top = `${rectStartY}px`;
-            cropBox.style.width = '0px';
-            cropBox.style.height = '0px';
-            cropBox.style.display = 'block';
-            bgElement.style.cursor = 'crosshair';
-            return;
-        }
-
-        // โหมดปกติ: ลากเพื่อเลื่อนรูป (Pan)
-        isDragging = true;
-        isCropping = false;
-        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        startY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
-        bgElement.style.cursor = 'grabbing';
-    };
-
-    const onDrag = (e) => {
-        if (isCropping) {
-            e.preventDefault();
-            const rect = container.getBoundingClientRect();
-            let currentMouseX = e.clientX - rect.left;
-            let currentMouseY = e.clientY - rect.top;
-
-            // ล็อกให้อยู่ในกรอบรูป
-            currentMouseX = Math.max(0, Math.min(currentMouseX, rect.width));
-            currentMouseY = Math.max(0, Math.min(currentMouseY, rect.height));
-
-            const width = Math.abs(currentMouseX - rectStartX);
-            const height = Math.abs(currentMouseY - rectStartY);
-            const left = Math.min(currentMouseX, rectStartX);
-            const top = Math.min(currentMouseY, rectStartY);
-
-            cropBox.style.width = `${width}px`;
-            cropBox.style.height = `${height}px`;
-            cropBox.style.left = `${left}px`;
-            cropBox.style.top = `${top}px`;
-            return;
-        }
-
-        if (!isDragging) return;
-        e.preventDefault(); 
-
-        const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        const currentY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
-
-        const diffX = currentX - startX;
-        const diffY = currentY - startY;
-
-        // หารซูมเพื่อให้ความเร็วสอดคล้องกับนิ้วเมื่อซูมเข้าไป
-        stateObj.panX += diffX / stateObj.zoom;
-        stateObj.panY += diffY / stateObj.zoom;
-
-        updateTransform();
-
-        startX = currentX;
-        startY = currentY;
-    };
-
-    const stopDrag = () => {
-        if (isCropping && cropBox) {
-            isCropping = false;
-            cropBox.style.display = 'none';
-            bgElement.style.cursor = 'grab';
-
-            const rect = container.getBoundingClientRect();
-            const boxWidth = parseFloat(cropBox.style.width);
-            const boxHeight = parseFloat(cropBox.style.height);
-            const boxLeft = parseFloat(cropBox.style.left);
-            const boxTop = parseFloat(cropBox.style.top);
-
-            // หากลากคลุมเล็กเกินไป ให้ยกเลิก (ป้องกันการคลิกพลาด)
-            if (boxWidth < 20 || boxHeight < 20) return;
-
-            const scaleX = rect.width / boxWidth;
-            const scaleY = rect.height / boxHeight;
-            let newZoom = Math.min(scaleX, scaleY); 
-            
-            const targetZoom = Math.min(5, stateObj.zoom * newZoom);
-
-            // ย้ายพิกัดให้กล่องที่ลากมาอยู่ตรงกลาง
-            const centerX = boxLeft + (boxWidth / 2);
-            const centerY = boxTop + (boxHeight / 2);
-            const originX = rect.width / 2;
-            const originY = rect.height / 2;
-
-            stateObj.panX += (originX - centerX) / stateObj.zoom;
-            stateObj.panY += (originY - centerY) / stateObj.zoom;
-            stateObj.zoom = targetZoom;
-
-            updateTransform();
-            return;
-        }
-
-        if (isDragging) {
-            isDragging = false;
-            bgElement.style.cursor = 'grab';
-        }
-    };
-
-    container.addEventListener('mousedown', startDrag);
-    container.addEventListener('touchstart', startDrag, { passive: false });
-    window.addEventListener('mousemove', onDrag);
-    window.addEventListener('touchmove', onDrag, { passive: false });
-    window.addEventListener('mouseup', stopDrag);
-    window.addEventListener('touchend', stopDrag);
-
-    // การซูมรูป (Zoom ผ่านลูกกลิ้งเมาส์)
-    container.addEventListener('wheel', (e) => {
-        e.preventDefault(); 
-        const zoomStep = 0.15; // ปรับให้ซูมไวขึ้นเล็กน้อย
-        stateObj.zoom -= Math.sign(e.deltaY) * zoomStep; 
-        stateObj.zoom = Math.max(1, Math.min(5, stateObj.zoom)); // ลิมิตซูมที่ 1x - 5x
-        
-        updateTransform();
-    }, { passive: false });
-}
-
-// ------------------------------------------------
-// เซ็ตวันที่ปัจจุบันอัตโนมัติ
-// ------------------------------------------------
-window.addEventListener('DOMContentLoaded', () => {
-    const dateInput = document.getElementById('input-date');
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    
-    dateInput.value = `${yyyy}-${mm}-${dd}`;
-    dateInput.dispatchEvent(new Event('input')); 
-});
-
-// ------------------------------------------------
-// สลับโหมด ทั่วไป และ Before / After
-// ------------------------------------------------
-const tabGeneral = document.getElementById('tab-general');
-const tabBA = document.getElementById('tab-ba');
-const uploadGeneral = document.getElementById('upload-section-general');
-const uploadBA = document.getElementById('upload-section-ba');
-const reportContent = document.getElementById('report-content');
-
-tabGeneral.addEventListener('click', () => {
-    currentMode = 'general';
-    tabGeneral.classList.add('active');
-    tabBA.classList.remove('active');
-    uploadGeneral.classList.remove('hidden');
-    uploadBA.classList.add('hidden');
-    
-    renderGeneral(); 
-});
-
-tabBA.addEventListener('click', () => {
-    currentMode = 'ba';
-    tabBA.classList.add('active');
-    tabGeneral.classList.remove('active');
-    uploadBA.classList.remove('hidden');
-    uploadGeneral.classList.add('hidden');
-
-    buildBeforeAfterLayout();
-    renderBA(); 
-});
-
-function buildBeforeAfterLayout() {
-    reportContent.style.padding = '0'; 
-    reportContent.style.display = 'flex';
-    reportContent.style.flexDirection = 'column';
-    reportContent.style.backgroundColor = 'transparent';
-    
-    reportContent.innerHTML = `
-        <div class="section-before">
-            <div class="badge-ba badge-before">BEFORE</div>
-            <div id="grid-before" style="flex: 1; display: grid; gap: 10px;"></div>
-        </div>
-        <div class="section-after">
-            <div class="badge-ba badge-after">AFTER</div>
-            <div id="grid-after" style="flex: 1; display: grid; gap: 10px;"></div>
-        </div>
-    `;
-}
-
-// ------------------------------------------------
-// ฟังก์ชันกลางสำหรับอ่านไฟล์และบันทึกลง State Array
-// ------------------------------------------------
-function handleFileUpload(files, stateArray, renderCallback) {
-    if (files.length === 0) return;
-    const fileArr = Array.from(files);
-    let filesRead = 0;
-    
-    fileArr.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            stateArray.push({
-                name: file.name,
-                url: e.target.result,
-                panX: 0,
-                panY: 0,
-                zoom: 1
-            });
-            filesRead++;
-            if (filesRead === fileArr.length) {
-                renderCallback();
-            }
-        };
-        reader.readAsDataURL(file);
-    });
-}
-
-// ------------------------------------------------
-// ระบบอัปโหลดและเรนเดอร์: โหมดทั่วไป
-// ------------------------------------------------
-document.getElementById('input-images-general').addEventListener('change', function(event) {
-    if (currentMode !== 'general') return;
-    handleFileUpload(event.target.files, stateGeneral, renderGeneral);
-    event.target.value = ''; 
-});
-
-// ------------------------------------------------
-// ระบบอัปโหลดและเรนเดอร์: โหมด Before/After
-// ------------------------------------------------
-document.getElementById('input-images-before').addEventListener('change', function(event) {
-    if (currentMode !== 'ba') return;
-    handleFileUpload(event.target.files, stateBefore, renderBA);
-    event.target.value = '';
-});
-
-document.getElementById('input-images-after').addEventListener('change', function(event) {
-    if (currentMode !== 'ba') return;
-    handleFileUpload(event.target.files, stateAfter, renderBA);
-    event.target.value = '';
-});
-
-// ------------------------------------------------
-// จัดการฟอร์มข้อความและวันที่
-// ------------------------------------------------
-document.getElementById('input-date').addEventListener('input', function(event) {
-    const dateVal = event.target.value;
-    if (dateVal) {
-        const [year, month, day] = dateVal.split('-');
-        document.getElementById('prev-date').textContent = `${day}.${month}.${year}`;
-    } else {
-        document.getElementById('prev-date').textContent = 'วันที่';
+    .editor-panel {
+        width: 100%;
+        box-shadow: none;
+        border-bottom: 1px solid #ddd;
     }
-});
-
-function setupTextBinding(inputId, previewId) {
-    document.getElementById(inputId).addEventListener('input', function(event) {
-        document.getElementById(previewId).textContent = event.target.value || '\u00A0';
-    });
+    .preview-panel {
+        padding: 20px;
+        overflow: visible;
+    }
+    #report-wrapper {
+        transform: scale(0.55); 
+        margin-bottom: -350px; 
+    }
 }
-setupTextBinding('input-dept', 'prev-dept');
-setupTextBinding('input-title', 'prev-title');
 
-// ------------------------------------------------
-// Export รูปภาพ 
-// ------------------------------------------------
-document.getElementById('btn-export').addEventListener('click', function() {
-    const originalCanvas = document.getElementById('report-canvas');
-    const originalText = this.textContent;
-    
-    this.textContent = "กำลังสร้างรูปภาพ...";
-    this.disabled = true;
+/* --- Template Buttons --- */
+.template-tabs {
+    display: flex;
+    gap: 10px;
+}
+.tpl-btn {
+    flex: 1;
+    padding: 8px 0;
+    color: white;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    opacity: 0.4;
+    transition: all 0.2s;
+}
+.tpl-btn.active {
+    opacity: 1;
+    border-color: #333;
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
 
-    // โคลน Canvas เพื่อส่งออกภาพ
-    const clonedElement = originalCanvas.cloneNode(true);
-    
-    // ** ลบปุ่ม 'X' ออกจากภาพโคลน จะได้ไม่ติดไปในไฟล์ Export **
-    const deleteBtns = clonedElement.querySelectorAll('.delete-slot-btn');
-    deleteBtns.forEach(btn => btn.remove());
+/* --- ปุ่มจัดเรียงรูปภาพ --- */
+.move-file-btn {
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    background: #e9e9e9;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+.move-file-btn:hover {
+    color: white;
+    background: var(--primary-green);
+}
 
-    const hiddenWrapper = document.createElement('div');
-    hiddenWrapper.style.position = 'absolute';
-    hiddenWrapper.style.top = '-9999px';
-    hiddenWrapper.style.left = '-9999px';
-    hiddenWrapper.style.width = '1076px';
-    hiddenWrapper.style.height = '1521px';
-    
-    hiddenWrapper.appendChild(clonedElement);
-    document.body.appendChild(hiddenWrapper);
-
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const exportScale = isMobile ? 1.5 : 2; 
-
-    html2canvas(clonedElement, { 
-        scale: exportScale, 
-        useCORS: true, 
-        backgroundColor: "#ffffff",
-        logging: false
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/jpeg', 1.0); 
-
-        if (isMobile) {
-            document.getElementById('mobile-preview-img').src = imgData;
-            document.getElementById('mobile-modal').classList.remove('hidden');
-        } else {
-            const link = document.createElement('a');
-            link.download = 'SCC_Report_' + new Date().getTime() + '.jpg';
-            link.href = imgData;
-            link.click();
-        }
-
-        document.body.removeChild(hiddenWrapper);
-        this.textContent = originalText;
-        this.disabled = false;
-    }).catch(err => {
-        alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
-        console.error(err);
-        document.body.removeChild(hiddenWrapper);
-        this.textContent = originalText;
-        this.disabled = false;
-    });
-});
-
-// ปิดหน้าต่าง Popup บนมือถือ
-document.getElementById('close-modal').addEventListener('click', function() {
-    document.getElementById('mobile-modal').classList.add('hidden');
-    document.getElementById('mobile-preview-img').src = ''; 
-});
-
-// ------------------------------------------------
-// ระบบเลือก Template (เปลี่ยนสีและโลโก้)
-// ------------------------------------------------
-document.querySelectorAll('.tpl-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        // อัปเดตปุ่ม Active
-        document.querySelectorAll('.tpl-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-
-        // ดึงค่า Template ที่เลือก
-        currentTemplate = this.getAttribute('data-tpl');
-        const tplData = templateConfig[currentTemplate];
-
-        // เปลี่ยนสีพื้นหลัง Canvas 
-        document.getElementById('report-canvas').style.backgroundColor = tplData.main;
-        
-        // เปลี่ยนโลโก้มุมขวาบน
-        document.getElementById('course-logo').src = tplData.logo;
-        
-        // รีเรนเดอร์เพื่ออัปเดตสีพื้นหลัง (เฉพาะโหมดทั่วไปที่จะเปลี่ยนสีพื้นหลังช่องภาพ)
-        if (currentMode === 'general') renderGeneral();
-    });
-});
+/* --- Modal สำหรับมือถือ --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 9999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; box-sizing: border-box;
+}
+.modal-text {
+    color: white; font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;
+}
+.modal-img {
+    max-width: 100%; max-height: 70vh; border: 2px solid white; border-radius: 8px; object-fit: contain;
+}
+.modal-btn {
+    margin-top: 20px; padding: 12px 30px; background: white; color: var(--primary-green);
+    border: none; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer;
+}
