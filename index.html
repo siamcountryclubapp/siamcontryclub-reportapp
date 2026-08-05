@@ -22,7 +22,7 @@
     <!-- Navbar -->
     <div class="navbar">
         <div class="badge">REPORT</div>
-        <div class="title">Siam Country Club Old Course</div>
+        <div class="title">Siam Country Club</div>
     </div>
 
     <!-- Main Container -->
@@ -31,6 +31,16 @@
         <!-- ฝั่งซ้าย: Editor -->
         <div class="editor-panel">
             <h2>เครื่องมือสร้างรายงาน</h2>
+
+            <!-- เพิ่มฟีเจอร์เลือก Template ตรงนี้ -->
+            <div class="form-section" style="margin-top: 10px;">
+                <div class="template-tabs">
+                    <button class="tpl-btn active" data-tpl="oc" style="background-color: #035c36;">OC</button>
+                    <button class="tpl-btn" data-tpl="ws" style="background-color: #17325c;">WS</button>
+                    <button class="tpl-btn" data-tpl="pl" style="background-color: #562821;">PL</button>
+                    <button class="tpl-btn" data-tpl="rh" style="background-color: #3b1c4a;">RH</button>
+                </div>
+            </div>
 
             <div class="form-section">
                 <label>รูปแบบงาน</label>
@@ -102,7 +112,8 @@
                         
                         <div class="report-header">
                             <img src="img/logo-scc.png" alt="SCC_logo" style="width: 128px; height: 64px;">
-                            <img src="img/OC03.png" alt="OC_logo" style="width: 80px; height: 80px;">
+                            <!-- เพิ่ม id="course-logo" ตรงนี้ -->
+                            <img id="course-logo" src="img/OC03.png" alt="OC_logo" style="width: 80px; height: 80px;">
                         </div>
 
                         <div class="report-content" id="report-content" style="gap: none;">
