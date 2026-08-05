@@ -66,8 +66,18 @@
                     <div>อัปโหลดรูปภาพ</div>
                     <input type="file" accept="image/*" multiple id="input-images-general">
                 </div>
+                
                 <!-- กล่องแสดงรายชื่อไฟล์ -->
                 <div id="file-list-general" class="file-list"></div>
+
+                <!-- กล่องแสดงเลย์เอาต์ (ปรับปรุงสำหรับรูปจำนวนคู่) -->
+            <div id="layout-toggle-2img" class="hidden" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;">
+                <div style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px;">การจัดวาง (สำหรับรูปจำนวนคู่):</div>
+                <div style="display: flex; gap: 5px;">
+                    <button type="button" class="layout-btn active" id="btn-layout-h">แนวนอน (กว้าง)</button>
+                    <button type="button" class="layout-btn" id="btn-layout-v">แนวตั้ง (สูง)</button>
+                </div>
+            </div>
             </div>
 
             <!-- กล่องอัปโหลด: โหมด Before / After -->
@@ -91,6 +101,17 @@
                     </div>
                     <!-- กล่องแสดงรายชื่อไฟล์ -->
                     <div id="file-list-after" class="file-list"></div>
+                    <!-- กล่องแสดงรายชื่อไฟล์ -->
+                <div id="file-list-general" class="file-list"></div>
+
+                <!-- เพิ่มเมนูเลือกเลย์เอาต์ 2 รูป ตรงนี้ -->
+                <div id="layout-toggle-2img" class="hidden" style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;">
+                    <div style="font-size: 12px; font-weight: bold; color: #555; margin-bottom: 8px;">การจัดวาง (สำหรับ 2 รูป):</div>
+                    <div style="display: flex; gap: 5px;">
+                        <button type="button" class="layout-btn active" id="btn-layout-h">ซ้าย-ขวา</button>
+                        <button type="button" class="layout-btn" id="btn-layout-v">บน-ล่าง</button>
+                    </div>
+                </div>
                 </div>
             </div>
 
