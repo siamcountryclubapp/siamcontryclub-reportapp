@@ -249,6 +249,7 @@ textarea {
     cursor: pointer;
     transition: 0.3s;
 }
+
 .save-btn:hover { background-color: white; color: black; }
 .save-btn:disabled { background-color: #999; cursor: not-allowed; }
 
@@ -485,4 +486,24 @@ textarea {
 .modal-btn {
     margin-top: 20px; padding: 12px 30px; background: white; color: var(--primary-green);
     border: none; border-radius: 20px; font-size: 16px; font-weight: bold; cursor: pointer;
+}
+
+/* --- ปุ่มเลย์เอาต์ 2 รูป --- */
+.layout-btn {
+    flex: 1;
+    padding: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 4px;
+    color: #555;
+    transition: 0.2s;
+    font-family: 'Noto Sans Thai', sans-serif;
+}
+.layout-btn.active {
+    background: black;
+    color: white;
+    border-color: black;
+    font-weight: bold;
 }
