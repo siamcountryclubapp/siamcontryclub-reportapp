@@ -404,6 +404,7 @@ textarea {
     width: 100%; 
     max-width: 100%; 
     box-sizing: border-box;
+    text-align: left;
 }
 .footer-meta {
     align-self: flex-end; 
