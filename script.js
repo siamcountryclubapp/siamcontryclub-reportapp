@@ -526,6 +526,31 @@ setupTextBinding('input-dept', 'prev-dept');
 setupTextBinding('input-title', 'prev-title');
 
 // ------------------------------------------------
+// จัดการตำแหน่งข้อความ (ชิดซ้าย / ตรงกลาง)
+// ------------------------------------------------
+const btnAlignLeft = document.getElementById('btn-align-left');
+const btnAlignCenter = document.getElementById('btn-align-center');
+const prevTitleBox = document.getElementById('prev-title');
+
+if (btnAlignLeft && btnAlignCenter && prevTitleBox) {
+    btnAlignLeft.addEventListener('click', () => {
+        // อัปเดตสถานะปุ่ม
+        btnAlignLeft.classList.add('active');
+        btnAlignCenter.classList.remove('active');
+        // จัดข้อความชิดซ้าย
+        prevTitleBox.style.textAlign = 'left';
+    });
+
+    btnAlignCenter.addEventListener('click', () => {
+        // อัปเดตสถานะปุ่ม
+        btnAlignCenter.classList.add('active');
+        btnAlignLeft.classList.remove('active');
+        // จัดข้อความตรงกลาง
+        prevTitleBox.style.textAlign = 'center';
+    });
+}
+
+// ------------------------------------------------
 // Export รูปภาพ 
 // ------------------------------------------------
 document.getElementById('btn-export').addEventListener('click', function() {
