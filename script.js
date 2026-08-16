@@ -560,12 +560,12 @@ if (btnAlignLeft && btnAlignCenter && prevTitleBox) {
 }
 
 // ------------------------------------------------
-// Export รูปภาพ JPG (ดาวน์โหลดลงเครื่องทันที)
+// Export รูปภาพ JPG (ใช้ Web Share API เพื่อเซฟลงแอปรูปภาพ)
 // ------------------------------------------------
 document.getElementById('btn-export').addEventListener('click', function() {
     const originalCanvas = document.getElementById('report-canvas');
     const originalText = this.textContent;
-    this.textContent = "กำลังสร้างและดาวน์โหลด...";
+    this.textContent = "กำลังประมวลผลรูปภาพ...";
     this.disabled = true;
 
     const clonedElement = originalCanvas.cloneNode(true);
@@ -587,20 +587,35 @@ document.getElementById('btn-export').addEventListener('click', function() {
 
     html2canvas(clonedElement, { scale: exportScale, useCORS: true, backgroundColor: "#ffffff", logging: false }).then(canvas => {
         
-        // ใช้เทคนิค Blob บังคับดาวน์โหลดลงเครื่อง
-        canvas.toBlob(function(blob) {
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.download = 'SCC_Report_' + new Date().getTime() + '.jpg';
-            link.href = url;
+        canvas.toBlob(async function(blob) {
+            const fileName = 'SCC_Report_' + new Date().getTime() + '.jpg';
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
+
+            // เช็คว่ามือถือรองรับระบบแชร์ (Web Share API) หรือไม่
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                try {
+                    // เด้งเมนูแชร์ของเครื่อง เพื่อให้เลือก "บันทึกภาพ (Save Image)" ได้
+                    await navigator.share({
+                        files: [file],
+                        title: 'SCC Report',
+                    });
+                } catch (error) {
+                    console.log('ผู้ใช้ยกเลิกการแชร์ หรือแชร์ไม่สำเร็จ', error);
+                }
+            } else {
+                // ถ้ารองรับไม่ได้ (เช่น เข้าผ่านคอมพิวเตอร์) ให้ดาวน์โหลดแบบปกติ
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
             
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            window.URL.revokeObjectURL(url);
+            // คืนค่าหน่วยความจำและปุ่ม
             document.body.removeChild(hiddenWrapper);
-            
             const btn = document.getElementById('btn-export');
             btn.textContent = originalText;
             btn.disabled = false;
