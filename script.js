@@ -1,10 +1,20 @@
 // =========================================================
-// บังคับเด้งออกจาก LINE ไป Safari / Chrome อัตโนมัติทันทีที่เปิดเว็บ
+// บังคับเด้งออกจาก LINE ไป Safari / Chrome พร้อมแสดงหน้าจอโหลด
 // =========================================================
 if (navigator.userAgent.includes("Line") && !window.location.search.includes("openExternalBrowser=1")) {
-    const currentUrl = window.location.href;
-    const separator = currentUrl.includes("?") ? "&" : "?";
-    window.location.href = currentUrl + separator + "openExternalBrowser=1";
+    
+    // 1. แสดงหน้าจอสีเขียวแจ้งเตือนผู้ใช้
+    const overlay = document.getElementById('line-redirect-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+    
+    // 2. หน่วงเวลา 1.5 วินาทีให้ผู้ใช้อ่านข้อความทัน แล้วค่อยสั่งเด้งสลับแอป
+    setTimeout(() => {
+        const currentUrl = window.location.href;
+        const separator = currentUrl.includes("?") ? "&" : "?";
+        window.location.href = currentUrl + separator + "openExternalBrowser=1";
+    }, 1500); 
 }
 
 let currentMode = 'general';
