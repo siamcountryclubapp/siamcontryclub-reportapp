@@ -1,3 +1,12 @@
+// =========================================================
+// บังคับเด้งออกจาก LINE ไป Safari / Chrome อัตโนมัติทันทีที่เปิดเว็บ
+// =========================================================
+if (navigator.userAgent.includes("Line") && !window.location.search.includes("openExternalBrowser=1")) {
+    const currentUrl = window.location.href;
+    const separator = currentUrl.includes("?") ? "&" : "?";
+    window.location.href = currentUrl + separator + "openExternalBrowser=1";
+}
+
 let currentMode = 'general';
 
 const templateConfig = {
@@ -551,19 +560,15 @@ if (btnAlignLeft && btnAlignCenter && prevTitleBox) {
 }
 
 // ------------------------------------------------
-// Export รูปภาพ 
+// Export รูปภาพ JPG (ดาวน์โหลดลงเครื่องทันที)
 // ------------------------------------------------
 document.getElementById('btn-export').addEventListener('click', function() {
     const originalCanvas = document.getElementById('report-canvas');
     const originalText = this.textContent;
-    
-    this.textContent = "กำลังสร้างรูปภาพ...";
+    this.textContent = "กำลังสร้างและดาวน์โหลด...";
     this.disabled = true;
 
-    // โคลน Canvas เพื่อส่งออกภาพ
     const clonedElement = originalCanvas.cloneNode(true);
-    
-    // ** ลบปุ่ม 'X' ออกจากภาพโคลน จะได้ไม่ติดไปในไฟล์ Export **
     const deleteBtns = clonedElement.querySelectorAll('.delete-slot-btn');
     deleteBtns.forEach(btn => btn.remove());
 
@@ -580,40 +585,34 @@ document.getElementById('btn-export').addEventListener('click', function() {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const exportScale = isMobile ? 1.5 : 2; 
 
-    html2canvas(clonedElement, { 
-        scale: exportScale, 
-        useCORS: true, 
-        backgroundColor: "#ffffff",
-        logging: false
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/jpeg', 1.0); 
-
-        if (isMobile) {
-            document.getElementById('mobile-preview-img').src = imgData;
-            document.getElementById('mobile-modal').classList.remove('hidden');
-        } else {
+    html2canvas(clonedElement, { scale: exportScale, useCORS: true, backgroundColor: "#ffffff", logging: false }).then(canvas => {
+        
+        // ใช้เทคนิค Blob บังคับดาวน์โหลดลงเครื่อง
+        canvas.toBlob(function(blob) {
+            const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = 'SCC_Report_' + new Date().getTime() + '.jpg';
-            link.href = imgData;
+            link.href = url;
+            
+            document.body.appendChild(link);
             link.click();
-        }
+            document.body.removeChild(link);
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(hiddenWrapper);
+            
+            const btn = document.getElementById('btn-export');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 'image/jpeg', 1.0);
 
-        document.body.removeChild(hiddenWrapper);
-        this.textContent = originalText;
-        this.disabled = false;
     }).catch(err => {
-        alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ");
-        console.error(err);
+        alert("เกิดข้อผิดพลาดในการสร้างรูปภาพ กรุณาลองใหม่ครับ");
         document.body.removeChild(hiddenWrapper);
-        this.textContent = originalText;
-        this.disabled = false;
+        const btn = document.getElementById('btn-export');
+        btn.textContent = originalText;
+        btn.disabled = false;
     });
-});
-
-// ปิดหน้าต่าง Popup บนมือถือ
-document.getElementById('close-modal').addEventListener('click', function() {
-    document.getElementById('mobile-modal').classList.add('hidden');
-    document.getElementById('mobile-preview-img').src = ''; 
 });
 
 // ------------------------------------------------
