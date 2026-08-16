@@ -560,7 +560,7 @@ if (btnAlignLeft && btnAlignCenter && prevTitleBox) {
 }
 
 // ------------------------------------------------
-// Export รูปภาพ JPG (แยกการทำงาน คอมพิวเตอร์ / มือถือ)
+// Export รูปภาพ JPG (บังคับโหลดตรงบนคอม / แชร์บนมือถือ)
 // ------------------------------------------------
 document.getElementById('btn-export').addEventListener('click', function() {
     const originalCanvas = document.getElementById('report-canvas');
@@ -582,7 +582,7 @@ document.getElementById('btn-export').addEventListener('click', function() {
     hiddenWrapper.appendChild(clonedElement);
     document.body.appendChild(hiddenWrapper);
 
-    // เช็กว่าเป็นมือถือหรือคอมพิวเตอร์
+    // สร้างตัวแปรเช็กว่าเป็นหน้าจอมือถือ/แท็บเล็ตหรือไม่
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const exportScale = isMobile ? 1.5 : 2; 
 
@@ -590,22 +590,20 @@ document.getElementById('btn-export').addEventListener('click', function() {
         
         canvas.toBlob(async function(blob) {
             const fileName = 'SCC_Report_' + new Date().getTime() + '.jpg';
+            const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-            // กรณีที่ 1: ถ้าเป็น "มือถือ" ให้เด้งเมนูแชร์ เพื่อให้เซฟลงแอปรูปภาพได้
-            if (isMobile && navigator.share) {
-                const file = new File([blob], fileName, { type: 'image/jpeg' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'SCC Report',
-                        });
-                    } catch (error) {
-                        console.log('ผู้ใช้ยกเลิกการแชร์ หรือแชร์ไม่สำเร็จ', error);
-                    }
+            // เงื่อนไข: ถ้าเป็น "มือถือ" เครื่องถึงจะเด้งเมนูแชร์
+            if (isMobile && navigator.share && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'SCC Report',
+                    });
+                } catch (error) {
+                    console.log('ผู้ใช้ยกเลิกการแชร์ หรือแชร์ไม่สำเร็จ', error);
                 }
             } 
-            // กรณีที่ 2: ถ้าเป็น "คอมพิวเตอร์" ให้ดาวน์โหลดลงเครื่องทันที (ไม่เด้งเมนูแชร์)
+            // เงื่อนไข: ถ้าเป็น "คอมพิวเตอร์" (หรือมือถือที่ไม่รองรับ) ให้ดาวน์โหลดลงเครื่องทันที!
             else {
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
