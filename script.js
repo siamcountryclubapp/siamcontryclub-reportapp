@@ -120,7 +120,7 @@ function applyImageTransform(img, frame, item) {
 }
 
 // ------------------------------------------------
-// ฟังก์ชันอัปเดตรายชื่อไฟล์ (คลิกชื่อเพื่อครอปได้)
+// ฟังก์ชันอัปเดตรายชื่อไฟล์
 // ------------------------------------------------
 function updateFileListUI(containerId, stateArray, renderCallback) {
     const container = document.getElementById(containerId);
@@ -138,7 +138,7 @@ function updateFileListUI(containerId, stateArray, renderCallback) {
         nameSpan.style.textDecoration = 'underline';
         nameSpan.style.color = '#035c36';
         
-        nameSpan.onclick = () => {
+        nameSpan.addEventListener('click', () => {
             let gridSlots;
             if (stateArray === stateGeneral) gridSlots = document.querySelectorAll('#report-content .img-slot');
             else if (stateArray === stateBefore) gridSlots = document.querySelectorAll('#grid-before .img-slot');
@@ -146,7 +146,7 @@ function updateFileListUI(containerId, stateArray, renderCallback) {
             
             const targetSlot = gridSlots[index];
             if (targetSlot) openCropModal(item, targetSlot, targetSlot.querySelector('img'));
-        };
+        });
         
         const actionDiv = document.createElement('div');
         actionDiv.style.display = 'flex';
@@ -202,6 +202,7 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
     div.style.justifyContent = 'center';
     div.style.alignItems = 'center';
     div.style.backgroundColor = '#ddd';
+    div.style.touchAction = 'manipulation'; // ช่วยให้กดบนมือถือติดง่ายขึ้น
     
     if (isGeneral) {
         if (count === 3 && index === 0) div.style.gridColumn = '1 / span 2';
@@ -214,12 +215,13 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
     const img = document.createElement('img');
     img.src = item.url;
     img.style.position = 'absolute';
-    img.style.pointerEvents = 'none'; // ให้คลิกทะลุไปที่กล่อง div
+    img.style.pointerEvents = 'none'; 
     
     img.onload = () => applyImageTransform(img, div, item);
     setTimeout(() => applyImageTransform(img, div, item), 50);
 
-    div.onclick = () => openCropModal(item, div, img);
+    // ใช้ addEventListener เพื่อรองรับระบบมือถือได้ดีขึ้น
+    div.addEventListener('click', () => openCropModal(item, div, img));
 
     const delBtn = document.createElement('button');
     delBtn.className = 'delete-slot-btn';
@@ -237,7 +239,7 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
 }
 
 // ------------------------------------------------
-// โหมดครอปรูปภาพ (Modal Cropper) ที่ทำงาน 100%
+// โหมดครอปรูปภาพ (Modal Cropper) รองรับ Pointer Events
 // ------------------------------------------------
 let activeCropItem = null;
 let activePreviewImg = null;
@@ -251,7 +253,6 @@ function openCropModal(item, slotElement, previewImg) {
     activePreviewSlot = slotElement;
     activePreviewImg = previewImg;
     
-    // คำนวณสัดส่วนกรอบให้ตรงกับพรีวิว
     const slotW = slotElement.offsetWidth;
     const slotH = slotElement.offsetHeight;
     if(slotW === 0 || slotH === 0) return;
@@ -291,28 +292,31 @@ document.getElementById('btn-crop-close').addEventListener('click', () => {
     autoSaveToLocal(); 
 });
 
-// ฟังก์ชันลากภาพ
+// ฟังก์ชันลากภาพด้วย Pointer Events (เสถียรที่สุดบนมือถือ)
 let isDragging = false;
 let startX, startY;
 
 const startDrag = (e) => {
+    if (!activeCropItem) return;
     isDragging = true;
-    startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-    startY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
+    startX = e.clientX;
+    startY = e.clientY;
     modalFrame.style.cursor = 'grabbing';
+    
+    // บังคับให้เบราว์เซอร์โฟกัสการลากที่กรอบนี้เท่านั้น
+    try { modalFrame.setPointerCapture(e.pointerId); } catch(err){}
 };
 
 const onDrag = (e) => {
     if (!isDragging || !activeCropItem) return;
     e.preventDefault();
 
-    const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-    const currentY = e.type.includes('mouse') ? e.pageY : e.touches[0].clientY;
+    const currentX = e.clientX;
+    const currentY = e.clientY;
     
     const diffX = currentX - startX;
     const diffY = currentY - startY;
 
-    // คำนวณความกว้าง/สูงฐาน เพื่อใช้แปลงการลากเป็นเปอร์เซ็นต์
     const frameW = modalFrame.offsetWidth;
     const frameH = modalFrame.offsetHeight;
     const imgRatio = modalImg.naturalWidth / modalImg.naturalHeight;
@@ -327,7 +331,7 @@ const onDrag = (e) => {
         baseH = frameW / imgRatio;
     }
 
-    // แปลงพิกเซลการลากเป็นเปอร์เซ็นต์
+    // เลื่อนภาพ
     activeCropItem.panX += (diffX / (baseW * activeCropItem.zoom)) * 100;
     activeCropItem.panY += (diffY / (baseH * activeCropItem.zoom)) * 100;
 
@@ -340,17 +344,17 @@ const onDrag = (e) => {
     startY = currentY;
 };
 
-const stopDrag = () => {
+const stopDrag = (e) => {
     isDragging = false;
     modalFrame.style.cursor = 'grab';
+    try { modalFrame.releasePointerCapture(e.pointerId); } catch(err){}
 };
 
-modalFrame.addEventListener('mousedown', startDrag);
-modalFrame.addEventListener('touchstart', startDrag, { passive: false });
-window.addEventListener('mousemove', onDrag, { passive: false });
-window.addEventListener('touchmove', onDrag, { passive: false });
-window.addEventListener('mouseup', stopDrag);
-window.addEventListener('touchend', stopDrag);
+// เปลี่ยนมาใช้ pointer events ครอบคลุมทั้งเมาส์และนิ้วสัมผัส
+modalFrame.addEventListener('pointerdown', startDrag);
+window.addEventListener('pointermove', onDrag, { passive: false });
+window.addEventListener('pointerup', stopDrag);
+window.addEventListener('pointercancel', stopDrag); // กรณีลากออกนอกจอหรือมีแจ้งเตือนแทรก
 
 // ระบบซูม
 const handleZoom = (direction) => {
