@@ -26,10 +26,10 @@ let layoutTwoImages = 'horizontal';
 // ฉีด HTML สร้างหน้าต่าง Crop Modal 
 // =========================================================
 const cropModalHTML = `
-<div id="crop-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; touch-action: none;">
+<div id="crop-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; touch-action: none; overscroll-behavior: none;">
     <div style="display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; align-items: center;">
         <h3 style="color: white; margin: 0; font-weight: normal; font-size: 16px;">ใช้นิ้วลากหรือซูมภาพ</h3>
-        <button id="btn-crop-close" style="background: #16a34a; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">เสร็จสิ้น</button>
+        <button id="btn-crop-close" style="background: #16a34a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">เสร็จสิ้น</button>
     </div>
     
     <!-- กรอบครอปภาพ (ล็อกสัดส่วน) -->
@@ -46,8 +46,8 @@ const cropModalHTML = `
 
     <!-- ปุ่มซูม -->
     <div style="display: flex; gap: 20px; margin-top: 30px;">
-        <button id="btn-crop-zoom-out" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-size: 20px; cursor: pointer;">➖</button>
-        <button id="btn-crop-zoom-in" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 12px 30px; border-radius: 12px; font-size: 20px; cursor: pointer;">➕</button>
+        <button id="btn-crop-zoom-out" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 15px 35px; border-radius: 12px; font-size: 20px; cursor: pointer;">➖</button>
+        <button id="btn-crop-zoom-in" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 15px 35px; border-radius: 12px; font-size: 20px; cursor: pointer;">➕</button>
     </div>
 </div>
 `;
@@ -97,7 +97,6 @@ function applyImageTransform(img, frame, item) {
     const frameRatio = frameW / frameH;
 
     let baseW, baseH;
-    // ให้ภาพปกคลุม (Cover) กรอบพอดีเป๊ะ
     if (imgRatio > frameRatio) {
         baseH = frameH;
         baseW = frameH * imgRatio;
@@ -109,7 +108,6 @@ function applyImageTransform(img, frame, item) {
     img.style.width = baseW + 'px';
     img.style.height = baseH + 'px';
 
-    // คำนวณขีดจำกัดการเลื่อน (ป้องกันไม่ให้เห็นขอบดำ)
     const maxPanPctX = ((baseW * item.zoom - frameW) / 2) / baseW * 100;
     const maxPanPctY = ((baseH * item.zoom - frameH) / 2) / baseH * 100;
 
@@ -202,7 +200,7 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
     div.style.justifyContent = 'center';
     div.style.alignItems = 'center';
     div.style.backgroundColor = '#ddd';
-    div.style.touchAction = 'manipulation'; // ช่วยให้กดบนมือถือติดง่ายขึ้น
+    div.style.touchAction = 'manipulation';
     
     if (isGeneral) {
         if (count === 3 && index === 0) div.style.gridColumn = '1 / span 2';
@@ -220,7 +218,6 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
     img.onload = () => applyImageTransform(img, div, item);
     setTimeout(() => applyImageTransform(img, div, item), 50);
 
-    // ใช้ addEventListener เพื่อรองรับระบบมือถือได้ดีขึ้น
     div.addEventListener('click', () => openCropModal(item, div, img));
 
     const delBtn = document.createElement('button');
@@ -239,7 +236,7 @@ function createImgSlot(item, index, stateArray, renderCallback, isGeneral = fals
 }
 
 // ------------------------------------------------
-// โหมดครอปรูปภาพ (Modal Cropper) รองรับ Pointer Events
+// โหมดครอปรูปภาพ (Modal Cropper) - ระบบ Touch Events สำหรับมือถือ
 // ------------------------------------------------
 let activeCropItem = null;
 let activePreviewImg = null;
@@ -274,45 +271,52 @@ function openCropModal(item, slotElement, previewImg) {
     
     modalImg.src = item.url;
     
-    modalImg.onload = () => {
-        applyImageTransform(modalImg, modalFrame, activeCropItem);
-    };
-    applyImageTransform(modalImg, modalFrame, activeCropItem);
-    
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden'; 
+    
+    // คำนวณหลังจากโชว์ modal แล้ว
+    setTimeout(() => {
+        applyImageTransform(modalImg, modalFrame, activeCropItem);
+    }, 10);
 }
 
 document.getElementById('btn-crop-close').addEventListener('click', () => {
     modal.classList.add('hidden');
-    document.body.style.overflow = 'auto'; 
+    document.body.style.overflow = ''; 
     activeCropItem = null;
     activePreviewImg = null;
     activePreviewSlot = null;
     autoSaveToLocal(); 
 });
 
-// ฟังก์ชันลากภาพด้วย Pointer Events (เสถียรที่สุดบนมือถือ)
+// ==========================================
+// ฟังก์ชันลากภาพ (เมาส์ + นิ้วสัมผัส)
+// ==========================================
 let isDragging = false;
 let startX, startY;
+
+// ตัวดึงพิกัดนิ้วหรือเมาส์ให้ถูกต้อง
+const getEvX = (e) => e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+const getEvY = (e) => e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
 
 const startDrag = (e) => {
     if (!activeCropItem) return;
     isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
+    startX = getEvX(e);
+    startY = getEvY(e);
     modalFrame.style.cursor = 'grabbing';
-    
-    // บังคับให้เบราว์เซอร์โฟกัสการลากที่กรอบนี้เท่านั้น
-    try { modalFrame.setPointerCapture(e.pointerId); } catch(err){}
 };
 
 const onDrag = (e) => {
     if (!isDragging || !activeCropItem) return;
-    e.preventDefault();
+    
+    // หัวใจสำคัญสำหรับมือถือ: ล็อกไม่ให้หน้าจอเลื่อนเวลาใช้นิ้วลากรูป
+    if (e.type.includes('touch')) {
+        e.preventDefault(); 
+    }
 
-    const currentX = e.clientX;
-    const currentY = e.clientY;
+    const currentX = getEvX(e);
+    const currentY = getEvY(e);
     
     const diffX = currentX - startX;
     const diffY = currentY - startY;
@@ -331,7 +335,6 @@ const onDrag = (e) => {
         baseH = frameW / imgRatio;
     }
 
-    // เลื่อนภาพ
     activeCropItem.panX += (diffX / (baseW * activeCropItem.zoom)) * 100;
     activeCropItem.panY += (diffY / (baseH * activeCropItem.zoom)) * 100;
 
@@ -344,19 +347,23 @@ const onDrag = (e) => {
     startY = currentY;
 };
 
-const stopDrag = (e) => {
+const stopDrag = () => {
     isDragging = false;
     modalFrame.style.cursor = 'grab';
-    try { modalFrame.releasePointerCapture(e.pointerId); } catch(err){}
 };
 
-// เปลี่ยนมาใช้ pointer events ครอบคลุมทั้งเมาส์และนิ้วสัมผัส
-modalFrame.addEventListener('pointerdown', startDrag);
-window.addEventListener('pointermove', onDrag, { passive: false });
-window.addEventListener('pointerup', stopDrag);
-window.addEventListener('pointercancel', stopDrag); // กรณีลากออกนอกจอหรือมีแจ้งเตือนแทรก
+// จับ Events ของคอมพิวเตอร์
+modalFrame.addEventListener('mousedown', startDrag);
+window.addEventListener('mousemove', onDrag, { passive: false });
+window.addEventListener('mouseup', stopDrag);
 
-// ระบบซูม
+// จับ Events ของมือถือ (passive: false คือพระเอกที่ทำให้ลากติดนิ้ว)
+modalFrame.addEventListener('touchstart', startDrag, { passive: false });
+window.addEventListener('touchmove', onDrag, { passive: false });
+window.addEventListener('touchend', stopDrag);
+window.addEventListener('touchcancel', stopDrag);
+
+// ระบบซูมภาพ
 const handleZoom = (direction) => {
     if(!activeCropItem) return;
     const zoomStep = 0.15;
@@ -369,8 +376,8 @@ const handleZoom = (direction) => {
     }
 };
 
-document.getElementById('btn-crop-zoom-in').onclick = () => handleZoom(1);
-document.getElementById('btn-crop-zoom-out').onclick = () => handleZoom(-1);
+document.getElementById('btn-crop-zoom-in').addEventListener('click', () => handleZoom(1));
+document.getElementById('btn-crop-zoom-out').addEventListener('click', () => handleZoom(-1));
 
 modalFrame.addEventListener('wheel', (e) => {
     e.preventDefault(); 
