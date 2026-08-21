@@ -23,73 +23,44 @@ let currentTemplate = 'oc';
 let layoutTwoImages = 'horizontal'; 
 
 // =========================================================
-// ฉีด HTML สร้างหน้าต่าง Crop Modal 
+// ฉีด HTML สร้างหน้าต่าง Crop Modal แบบปลอดภัย
 // =========================================================
-const cropModalHTML = `
-<div id="crop-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; touch-action: none; overscroll-behavior: none;">
-    <div style="display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; align-items: center;">
-        <h3 style="color: white; margin: 0; font-weight: normal; font-size: 16px;">ใช้นิ้วลากหรือซูมภาพ</h3>
-        <button id="btn-crop-close" style="background: #16a34a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">เสร็จสิ้น</button>
-    </div>
-    
-    <!-- กรอบครอปภาพ (ล็อกสัดส่วน) -->
-    <div id="crop-modal-frame" style="background-color: #111; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 10px 30px rgba(0,0,0,0.8); cursor: grab; touch-action: none;">
-        <!-- รูปภาพที่ใช้เลื่อน -->
-        <img id="crop-modal-img" style="position: absolute; pointer-events: none; transform-origin: center;" draggable="false" />
+if (!document.getElementById('scc-crop-modal')) {
+    const cropModalHTML = `
+    <div id="scc-crop-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background: #000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; touch-action: none;">
         
-        <!-- เส้นตาราง 9 ช่อง -->
-        <div style="position: absolute; top: 33.33%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
-        <div style="position: absolute; top: 66.66%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
-        <div style="position: absolute; left: 33.33%; top: 0; height: 100%; width: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
-        <div style="position: absolute; left: 66.66%; top: 0; height: 100%; width: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
+        <div style="display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; align-items: center;">
+            <h3 style="color: white; margin: 0; font-size: 16px; font-weight: normal;">ใช้นิ้วลากเพื่อจัดตำแหน่งภาพ</h3>
+            <button id="scc-crop-close" style="background: #16a34a; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">เสร็จสิ้น</button>
+        </div>
+        
+        <!-- กรอบครอปภาพ (ล็อกสัดส่วน) -->
+        <div id="scc-crop-frame" style="background-color: #111; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 0 2px rgba(255,255,255,1); touch-action: none; cursor: grab;">
+            
+            <img id="scc-crop-img" style="position: absolute; pointer-events: none; transform-origin: center;" draggable="false" />
+            
+            <!-- เส้นตาราง 9 ช่อง -->
+            <div style="position: absolute; top: 33.33%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
+            <div style="position: absolute; top: 66.66%; left: 0; width: 100%; height: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
+            <div style="position: absolute; left: 33.33%; top: 0; height: 100%; width: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
+            <div style="position: absolute; left: 66.66%; top: 0; height: 100%; width: 1px; background: rgba(255,255,255,0.4); pointer-events: none;"></div>
+        </div>
+
+        <!-- ปุ่มซูม (ขนาดใหญ่กดง่ายสำหรับมือถือ) -->
+        <div style="display: flex; gap: 20px; margin-top: 30px; width: 100%; max-width: 500px; justify-content: center;">
+            <button id="scc-zoom-out" style="background: #333; color: white; border: none; padding: 15px 40px; border-radius: 12px; font-size: 24px; cursor: pointer;">➖</button>
+            <button id="scc-zoom-in" style="background: #333; color: white; border: none; padding: 15px 40px; border-radius: 12px; font-size: 24px; cursor: pointer;">➕</button>
+        </div>
     </div>
-
-    <!-- ปุ่มซูม -->
-    <div style="display: flex; gap: 20px; margin-top: 30px;">
-        <button id="btn-crop-zoom-out" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 15px 35px; border-radius: 12px; font-size: 20px; cursor: pointer;">➖</button>
-        <button id="btn-crop-zoom-in" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 15px 35px; border-radius: 12px; font-size: 20px; cursor: pointer;">➕</button>
-    </div>
-</div>
-`;
-document.body.insertAdjacentHTML('beforeend', cropModalHTML);
-
-// =========================================================
-// ระบบ Local Storage (IndexedDB)
-// =========================================================
-const DB_NAME = "SCCReportDB";
-const STORE_NAME = "reports";
-let db;
-let currentJobId = null; 
-let currentJobList = [];
-
-try {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = function(event) {
-        db = event.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
-        }
-    };
-    request.onsuccess = function(event) { db = event.target.result; };
-} catch (e) {
-    console.error("IndexedDB error:", e);
+    `;
+    document.body.insertAdjacentHTML('beforeend', cropModalHTML);
 }
 
-function resetJob() {
-    currentJobId = null;
-    stateBefore = [];
-    stateAfter = [];
-    if(document.getElementById('input-reporter')) document.getElementById('input-reporter').value = '';
-    if(document.getElementById('input-location')) document.getElementById('input-location').value = '';
-    if(document.getElementById('save-indicator')) document.getElementById('save-indicator').textContent = '';
-    renderBA();
-}
-
-// ------------------------------------------------
-// ฟังก์ชันคำนวณสัดส่วนรูปภาพ (สมการคณิตศาสตร์)
-// ------------------------------------------------
+// =========================================================
+// สมการคำนวณตำแหน่งภาพ
+// =========================================================
 function applyImageTransform(img, frame, item) {
-    if (!img.naturalWidth || !frame.offsetWidth) return;
+    if (!img || !img.naturalWidth || !frame || !frame.offsetWidth) return;
     
     const frameW = frame.offsetWidth;
     const frameH = frame.offsetHeight;
@@ -108,13 +79,61 @@ function applyImageTransform(img, frame, item) {
     img.style.width = baseW + 'px';
     img.style.height = baseH + 'px';
 
-    const maxPanPctX = ((baseW * item.zoom - frameW) / 2) / baseW * 100;
-    const maxPanPctY = ((baseH * item.zoom - frameH) / 2) / baseH * 100;
+    const maxPanPctX = Math.max(0, 50 * (1 - frameW / (baseW * item.zoom)));
+    const maxPanPctY = Math.max(0, 50 * (1 - frameH / (baseH * item.zoom)));
 
     item.panX = Math.max(-maxPanPctX, Math.min(maxPanPctX, item.panX));
     item.panY = Math.max(-maxPanPctY, Math.min(maxPanPctY, item.panY));
 
     img.style.transform = `scale(${item.zoom}) translate(${item.panX}%, ${item.panY}%)`;
+}
+
+// =========================================================
+// ระบบสร้างช่องรูปภาพ (คลิกเพื่อครอป)
+// =========================================================
+function createImgSlot(item, index, stateArray, renderCallback, isGeneral = false, count = 0) {
+    const div = document.createElement('div');
+    div.className = 'img-slot';
+    div.style.cursor = 'pointer'; 
+    div.style.position = 'relative';
+    div.style.overflow = 'hidden';
+    div.style.display = 'flex';
+    div.style.justifyContent = 'center';
+    div.style.alignItems = 'center';
+    div.style.backgroundColor = '#ddd';
+    div.style.touchAction = 'none'; // ป้องกันมือถือเอ๋อ
+    
+    if (isGeneral) {
+        if (count === 3 && index === 0) div.style.gridColumn = '1 / span 2';
+        else if (count === 5) div.style.gridColumn = index < 2 ? 'span 3' : 'span 2';
+        else if (count === 7) div.style.gridColumn = index < 4 ? 'span 3' : 'span 2';
+    }
+
+    if (item.panX === undefined) { item.panX = 0; item.panY = 0; item.zoom = 1; }
+
+    const img = document.createElement('img');
+    img.src = item.url;
+    img.style.position = 'absolute';
+    img.style.pointerEvents = 'none'; 
+    
+    img.onload = () => applyImageTransform(img, div, item);
+    setTimeout(() => applyImageTransform(img, div, item), 50);
+
+    div.addEventListener('click', () => openCropModal(item, div, img));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-slot-btn';
+    delBtn.innerHTML = '×';
+    delBtn.style.zIndex = '10';
+    delBtn.onclick = (e) => {
+        e.stopPropagation(); 
+        stateArray.splice(index, 1);
+        renderCallback();
+    };
+
+    div.appendChild(img);
+    div.appendChild(delBtn);
+    return div;
 }
 
 // ------------------------------------------------
@@ -155,30 +174,21 @@ function updateFileListUI(containerId, stateArray, renderCallback) {
             const upBtn = document.createElement('span');
             upBtn.className = 'move-file-btn';
             upBtn.innerHTML = '▲'; 
-            upBtn.onclick = () => {
-                [stateArray[index - 1], stateArray[index]] = [stateArray[index], stateArray[index - 1]];
-                renderCallback();
-            };
+            upBtn.onclick = () => { [stateArray[index - 1], stateArray[index]] = [stateArray[index], stateArray[index - 1]]; renderCallback(); };
             actionDiv.appendChild(upBtn);
         }
         if (index < stateArray.length - 1) {
             const downBtn = document.createElement('span');
             downBtn.className = 'move-file-btn';
             downBtn.innerHTML = '▼'; 
-            downBtn.onclick = () => {
-                [stateArray[index + 1], stateArray[index]] = [stateArray[index], stateArray[index + 1]];
-                renderCallback();
-            };
+            downBtn.onclick = () => { [stateArray[index + 1], stateArray[index]] = [stateArray[index], stateArray[index + 1]]; renderCallback(); };
             actionDiv.appendChild(downBtn);
         }
         
         const delBtn = document.createElement('span');
         delBtn.className = 'delete-file-btn';
         delBtn.textContent = 'ลบ';
-        delBtn.onclick = () => {
-            stateArray.splice(index, 1);
-            renderCallback();
-        };
+        delBtn.onclick = () => { stateArray.splice(index, 1); renderCallback(); };
         
         actionDiv.appendChild(delBtn);
         div.appendChild(nameSpan);
@@ -187,72 +197,23 @@ function updateFileListUI(containerId, stateArray, renderCallback) {
     });
 }
 
-// ------------------------------------------------
-// ระบบสร้างช่องรูปภาพ (คลิกรูปเพื่อครอปได้)
-// ------------------------------------------------
-function createImgSlot(item, index, stateArray, renderCallback, isGeneral = false, count = 0) {
-    const div = document.createElement('div');
-    div.className = 'img-slot';
-    div.style.cursor = 'pointer'; 
-    div.style.position = 'relative';
-    div.style.overflow = 'hidden';
-    div.style.display = 'flex';
-    div.style.justifyContent = 'center';
-    div.style.alignItems = 'center';
-    div.style.backgroundColor = '#ddd';
-    div.style.touchAction = 'manipulation';
-    
-    if (isGeneral) {
-        if (count === 3 && index === 0) div.style.gridColumn = '1 / span 2';
-        else if (count === 5) div.style.gridColumn = index < 2 ? 'span 3' : 'span 2';
-        else if (count === 7) div.style.gridColumn = index < 4 ? 'span 3' : 'span 2';
-    }
-
-    if (item.panX === undefined) { item.panX = 0; item.panY = 0; item.zoom = 1; }
-
-    const img = document.createElement('img');
-    img.src = item.url;
-    img.style.position = 'absolute';
-    img.style.pointerEvents = 'none'; 
-    
-    img.onload = () => applyImageTransform(img, div, item);
-    setTimeout(() => applyImageTransform(img, div, item), 50);
-
-    div.addEventListener('click', () => openCropModal(item, div, img));
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'delete-slot-btn';
-    delBtn.innerHTML = '×';
-    delBtn.style.zIndex = '10';
-    delBtn.onclick = (e) => {
-        e.stopPropagation(); 
-        stateArray.splice(index, 1);
-        renderCallback();
-    };
-
-    div.appendChild(img);
-    div.appendChild(delBtn);
-    return div;
-}
-
-// ------------------------------------------------
-// โหมดครอปรูปภาพ (Modal Cropper) - ระบบ Touch Events สำหรับมือถือ
-// ------------------------------------------------
+// =========================================================
+// ระบบลากภาพบน Modal (รองรับมือถือแบบ 100%)
+// =========================================================
 let activeCropItem = null;
 let activePreviewImg = null;
 let activePreviewSlot = null;
-const modal = document.getElementById('crop-modal');
-const modalFrame = document.getElementById('crop-modal-frame');
-const modalImg = document.getElementById('crop-modal-img');
+const modal = document.getElementById('scc-crop-modal');
+const modalFrame = document.getElementById('scc-crop-frame');
+const modalImg = document.getElementById('scc-crop-img');
 
 function openCropModal(item, slotElement, previewImg) {
     activeCropItem = item;
     activePreviewSlot = slotElement;
     activePreviewImg = previewImg;
     
-    const slotW = slotElement.offsetWidth;
-    const slotH = slotElement.offsetHeight;
-    if(slotW === 0 || slotH === 0) return;
+    let slotW = slotElement.offsetWidth || 300;
+    let slotH = slotElement.offsetHeight || 200;
     
     const slotRatio = slotW / slotH;
     const maxW = window.innerWidth * 0.9;
@@ -268,100 +229,99 @@ function openCropModal(item, slotElement, previewImg) {
     
     modalFrame.style.width = `${frameW}px`;
     modalFrame.style.height = `${frameH}px`;
-    
     modalImg.src = item.url;
     
-    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; 
+    document.body.style.touchAction = 'none'; // ห้ามมือถือเลื่อนจอ
     
-    // คำนวณหลังจากโชว์ modal แล้ว
-    setTimeout(() => {
+    if (modalImg.complete) {
         applyImageTransform(modalImg, modalFrame, activeCropItem);
-    }, 10);
+    } else {
+        modalImg.onload = () => applyImageTransform(modalImg, modalFrame, activeCropItem);
+    }
 }
 
-document.getElementById('btn-crop-close').addEventListener('click', () => {
-    modal.classList.add('hidden');
+document.getElementById('scc-crop-close').addEventListener('click', () => {
+    modal.style.display = 'none';
     document.body.style.overflow = ''; 
+    document.body.style.touchAction = ''; 
     activeCropItem = null;
     activePreviewImg = null;
     activePreviewSlot = null;
     autoSaveToLocal(); 
 });
 
-// ==========================================
-// ฟังก์ชันลากภาพ (เมาส์ + นิ้วสัมผัส)
-// ==========================================
-let isDragging = false;
-let startX, startY;
+// ฟังก์ชันลาก (Drag Logic)
+let dragData = { isDragging: false, startX: 0, startY: 0, initialPanX: 0, initialPanY: 0 };
 
-// ตัวดึงพิกัดนิ้วหรือเมาส์ให้ถูกต้อง
-const getEvX = (e) => e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-const getEvY = (e) => e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-const startDrag = (e) => {
+function startDrag(x, y) {
     if (!activeCropItem) return;
-    isDragging = true;
-    startX = getEvX(e);
-    startY = getEvY(e);
-    modalFrame.style.cursor = 'grabbing';
-};
+    dragData.isDragging = true;
+    dragData.startX = x;
+    dragData.startY = y;
+    dragData.initialPanX = activeCropItem.panX;
+    dragData.initialPanY = activeCropItem.panY;
+}
 
-const onDrag = (e) => {
-    if (!isDragging || !activeCropItem) return;
-    
-    // หัวใจสำคัญสำหรับมือถือ: ล็อกไม่ให้หน้าจอเลื่อนเวลาใช้นิ้วลากรูป
-    if (e.type.includes('touch')) {
-        e.preventDefault(); 
-    }
+function onDrag(x, y) {
+    if (!dragData.isDragging || !activeCropItem) return;
 
-    const currentX = getEvX(e);
-    const currentY = getEvY(e);
-    
-    const diffX = currentX - startX;
-    const diffY = currentY - startY;
+    const diffX = x - dragData.startX;
+    const diffY = y - dragData.startY;
 
     const frameW = modalFrame.offsetWidth;
     const frameH = modalFrame.offsetHeight;
     const imgRatio = modalImg.naturalWidth / modalImg.naturalHeight;
     const frameRatio = frameW / frameH;
     
-    let baseW, baseH;
-    if (imgRatio > frameRatio) {
-        baseH = frameH;
-        baseW = frameH * imgRatio;
-    } else {
-        baseW = frameW;
-        baseH = frameW / imgRatio;
-    }
+    let baseW = frameW, baseH = frameH;
+    if (imgRatio > frameRatio) { baseW = frameH * imgRatio; } 
+    else { baseH = frameW / imgRatio; }
 
-    activeCropItem.panX += (diffX / (baseW * activeCropItem.zoom)) * 100;
-    activeCropItem.panY += (diffY / (baseH * activeCropItem.zoom)) * 100;
+    const pctX = (diffX / (baseW * activeCropItem.zoom)) * 100;
+    const pctY = (diffY / (baseH * activeCropItem.zoom)) * 100;
+
+    activeCropItem.panX = dragData.initialPanX + pctX;
+    activeCropItem.panY = dragData.initialPanY + pctY;
 
     applyImageTransform(modalImg, modalFrame, activeCropItem);
     if (activePreviewImg && activePreviewSlot) {
         applyImageTransform(activePreviewImg, activePreviewSlot, activeCropItem);
     }
+}
 
-    startX = currentX;
-    startY = currentY;
-};
+function stopDrag() {
+    dragData.isDragging = false;
+}
 
-const stopDrag = () => {
-    isDragging = false;
-    modalFrame.style.cursor = 'grab';
-};
+// ------------------------------------
+// จับสัมผัสมือถือ (Touch Events)
+// ------------------------------------
+modalFrame.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // บังคับไม่ให้หน้าจอเลื่อนเด็ดขาด
+    startDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
 
-// จับ Events ของคอมพิวเตอร์
-modalFrame.addEventListener('mousedown', startDrag);
-window.addEventListener('mousemove', onDrag, { passive: false });
+modalFrame.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    onDrag(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+
+modalFrame.addEventListener('touchend', stopDrag);
+modalFrame.addEventListener('touchcancel', stopDrag);
+
+// ------------------------------------
+// จับเมาส์ (Mouse Events)
+// ------------------------------------
+modalFrame.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+});
+window.addEventListener('mousemove', (e) => {
+    if (dragData.isDragging) onDrag(e.clientX, e.clientY);
+});
 window.addEventListener('mouseup', stopDrag);
-
-// จับ Events ของมือถือ (passive: false คือพระเอกที่ทำให้ลากติดนิ้ว)
-modalFrame.addEventListener('touchstart', startDrag, { passive: false });
-window.addEventListener('touchmove', onDrag, { passive: false });
-window.addEventListener('touchend', stopDrag);
-window.addEventListener('touchcancel', stopDrag);
 
 // ระบบซูมภาพ
 const handleZoom = (direction) => {
@@ -371,13 +331,11 @@ const handleZoom = (direction) => {
     activeCropItem.zoom = Math.max(1, Math.min(5, activeCropItem.zoom));
     
     applyImageTransform(modalImg, modalFrame, activeCropItem);
-    if (activePreviewImg && activePreviewSlot) {
-        applyImageTransform(activePreviewImg, activePreviewSlot, activeCropItem);
-    }
+    if (activePreviewImg && activePreviewSlot) applyImageTransform(activePreviewImg, activePreviewSlot, activeCropItem);
 };
 
-document.getElementById('btn-crop-zoom-in').addEventListener('click', () => handleZoom(1));
-document.getElementById('btn-crop-zoom-out').addEventListener('click', () => handleZoom(-1));
+document.getElementById('scc-zoom-in').addEventListener('click', () => handleZoom(1));
+document.getElementById('scc-zoom-out').addEventListener('click', () => handleZoom(-1));
 
 modalFrame.addEventListener('wheel', (e) => {
     e.preventDefault(); 
@@ -385,9 +343,9 @@ modalFrame.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 
-// ------------------------------------------------
+// =========================================================
 // ฟังก์ชัน Render หลัก
-// ------------------------------------------------
+// =========================================================
 function renderGeneral() {
     const reportContent = document.getElementById('report-content');
     reportContent.innerHTML = '';
@@ -626,8 +584,35 @@ if (btnLayoutH && btnLayoutV) {
 }
 
 // =========================================================
-// ผูก Event ให้ฟังก์ชันบันทึกลงเบราว์เซอร์อัตโนมัติ
+// ระบบ Database / Local Storage (IndexedDB)
 // =========================================================
+const DB_NAME = "SCCReportDB";
+const STORE_NAME = "reports";
+let db;
+let currentJobId = null; 
+let currentJobList = [];
+
+try {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = function(event) {
+        db = event.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+        }
+    };
+    request.onsuccess = function(event) { db = event.target.result; };
+} catch (e) { console.error("IndexedDB error:", e); }
+
+function resetJob() {
+    currentJobId = null;
+    stateBefore = [];
+    stateAfter = [];
+    if(document.getElementById('input-reporter')) document.getElementById('input-reporter').value = '';
+    if(document.getElementById('input-location')) document.getElementById('input-location').value = '';
+    if(document.getElementById('save-indicator')) document.getElementById('save-indicator').textContent = '';
+    renderBA();
+}
+
 function autoSaveToLocal() {
     if (currentMode !== 'ba') return; 
     if (stateBefore.length === 0 && stateAfter.length === 0) return; 
